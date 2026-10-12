@@ -10,5 +10,5 @@ captures/
 *.ap_
 *.aab
 .DS_Store
-node_modules/
+node_modules
 *.log
