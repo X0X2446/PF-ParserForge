@@ -22,10 +22,15 @@ dependencies {
     implementation(libs.jsoup)
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.apksig)
     testImplementation(libs.junit)
     testImplementation(libs.mockwebserver)
 }
 
 tasks.withType<Test> {
     useJUnit()
+}
+
+tasks.named("processResources") {
+    dependsOn(rootProject.tasks.named("buildForgeDex"))
 }

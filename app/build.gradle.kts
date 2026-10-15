@@ -7,15 +7,15 @@ plugins {
 }
 
 android {
-    namespace = "com.parserforge.app"
+    namespace = "com.extforge.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.parserforge.app"
+        applicationId = "com.extforge.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
 
     buildTypes {
@@ -35,8 +35,11 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
     }
+
+    sourceSets.getByName("main").assets.srcDir(
+        rootProject.file("parser-core/src/main/resources"),
+    )
 
     packaging {
         resources {
@@ -53,6 +56,10 @@ kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
     }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(rootProject.tasks.named("buildForgeDex"))
 }
 
 dependencies {
