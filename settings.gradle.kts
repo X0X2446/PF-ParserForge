@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ParserForge"
+rootProject.name = "ExtForge"
 include(":app", ":parser-core")

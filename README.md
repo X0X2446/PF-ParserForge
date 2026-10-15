@@ -1,67 +1,45 @@
-# ParserForge
+# ExtForge
 
-Android tool for building HTML scrapers by clicking elements in a WebView. A tap becomes a CSS selector, the selector is assigned to a field, and the parser is stored as one JSON document an external reader can load.
+ExtForge builds Mihon catalogue extensions from CSS selectors and exports them as files other apps can open: a JSON profile, and a signed APK Mihon can install.
 
-## Screens
+The screen is black with phosphor green type, square borders, and monospace text.
 
-- **Parser list.** Create a scraper, then open Edit JSON, Test Run, or Launch Visual Builder.
-- **Visual builder.** Split WebView and selector sheet. Pick mode injects `selector_picker.js`, which blocks the click and calls `ParserForgeBridge.onElementPicked`.
-- **Selector sheet.** Manga List Title, Cover Thumbnail, Chapter URL, Reader Page Images. Assign writes the last picked path into that field. Jsoup previews matches against a DOM snapshot from the page.
-- **JSON schema.** Edit the stored document directly.
-- **Test run.** OkHttp GETs `entryUrl` with the captured user agent and cookies, then Jsoup runs the same selectors.
+## What an extension can do
 
-The chrome is black, white, and `#00FF66`, monospace, with 1dp borders and no rounded cards.
+- Popular, search, and latest list pages, with `{base}`, `{page}`, and `{query}` in the URL templates
+- A next-page selector that only answers whether another page exists
+- Detail fields: title, description, author, artist, genre, and status words
+- Chapters with a name, URL, date pattern, and document or reverse order
+- Page images from `src`, `data-src`, `data-lazy-src`, `srcset`, or the first one that is set
+- NSFW flag, language, and a source version id
+- A pause between requests, from 0 to 10000 ms
+- Image referer: none, the site root, or the chapter page
 
-## Session cookies
+## Cookies
 
-When a main frame finishes loading, or when you press Capture Session, the app reads `CookieManager` for that page and stores the cookie header plus the WebView user agent on the parser. Later OkHttp requests send those cookies only to the host they were captured on. `cf_clearance` is included when the WebView already has it. The app does not generate clearance tokens.
+`NO COOKIES` is the default. The extension clears the cookie jar and does not send a Cookie header.
 
-## JSON schema
+`MANUAL` sends only a cookie header you paste yourself, and only to the source host. ExtForge does not open a browser, does not collect `cf_clearance`, and does not solve check pages. If a test run looks like a check page, copy the cookie header from your own browser and paste it.
 
-`schemaVersion` is `1`.
+## Using the files
 
-```json
-{
-  "schemaVersion": 1,
-  "id": "uuid",
-  "name": "Example",
-  "entryUrl": "https://example.com/manga",
-  "session": {
-    "userAgent": "Mozilla/5.0 ...",
-    "capturedAtUrl": "https://example.com/manga",
-    "cookies": [
-      { "name": "cf_clearance", "value": "...", "domain": "example.com" }
-    ]
-  },
-  "selectors": {
-    "mangaListTitle": { "selector": "h1.title", "extract": "text" },
-    "coverThumbnail": { "selector": "img.cover", "extract": "src" },
-    "chapterUrl": { "selector": "li.chapter > a", "extract": "href" },
-    "readerPageImages": { "selector": "img.page", "extract": "src" }
-  }
-}
-```
+Share JSON writes a schema v2 file and opens the share sheet. Import JSON reads one profile or a list. Older ParserForge files (schema v1) open in the editor; the four old selectors are copied onto the list item, cover, chapter item, and page image so you can finish them.
 
-`extract` is `text`, `href`, or `src`. Image fields also read `data-src`, `data-lazy-src`, `data-original`, and the first `srcset` candidate. Href and src values are resolved against the page URL.
+Share APK and Install APK write a signed Mihon extension:
 
-## Layout
+- feature `tachiyomi.extension`
+- class `ex.extforge.runtime.ForgeSource`
+- `versionName` `1.4.<code>` so Mihon treats it as extension lib 1.4
+- a stable package `ex.extforge.s` plus 16 hex characters from the profile id
 
-- `parser-core` — models, schema, URL and cookie handling, OkHttp session client, Jsoup preview, parser store, picker script.
-- `app` — Compose UI and `SelectorWebView`.
-- `parser-core/src/main/resources/selector_picker.js` — click capture and CSS path builder.
+Install it, open Mihon, and trust the signature when asked. The signing key ships with the app so later exports can update the same extension; it is not a private key. Each export bumps the APK version code. On Android 10 and newer the APK is also copied to Downloads.
 
 ## Build
 
-JDK 17 and Android SDK 35.
+Android SDK 35 and build-tools 35.0.0 are required. `local.properties` should set `sdk.dir`.
 
 ```bash
-./gradlew :parser-core:test
-./gradlew :app:assembleDebug
+./gradlew :parser-core:test :app:assembleDebug
 ```
 
-The picker script can also be checked with Node and jsdom:
-
-```bash
-PICKER_SCRIPT=parser-core/src/main/resources/selector_picker.js \
-  node parser-core/src/test/js/selector_picker.test.mjs
-```
+`tools/build-forge-dex.sh` compiles the extension class against Mihon stubs and writes `parser-core/src/main/resources/mihon/forge-source.dex`. The app rewrites that dex with the profile JSON, packs a binary manifest, and signs it. The dex does not include OkHttp, Jsoup, or Mihon; those come from the Mihon app at runtime.
